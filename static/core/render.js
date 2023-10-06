@@ -1,11 +1,6 @@
-let sprites = [];
-
 function setup() {
 	createCanvas(windowWidth, windowHeight);
-}
-
-function acceptSprites(s) {
-	sprites = s;
+	frameRate(60);
 }
 
 function drawSprite(sprite) {
@@ -24,5 +19,7 @@ function drawSprite(sprite) {
 
 function draw() {
 	clear();
+	modules.forEach(async (module) => module.update());
 	sprites.forEach(drawSprite);
 }
+
