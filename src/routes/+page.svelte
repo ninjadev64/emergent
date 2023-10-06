@@ -2,14 +2,14 @@
 	import CodeMirror from "svelte-codemirror-editor";
 	import { javascript } from "@codemirror/lang-javascript";
 	import { oneDark } from "@codemirror/theme-one-dark";
-	let value = "";
 
 	let state = "editor";
 	let iframe;
 	let cw, ch;
 
 	let sprites = [];
-	let scripts = { "main": value };
+	let scripts = {};
+	let selectedScript;
 
 	import Inspector from "../components/inspector/Inspector.svelte";
 	let selected;
@@ -27,7 +27,7 @@
 	}
 
 	function updateScripts() {
-		scripts["main"] = value;
+		scripts = scripts;
 	}
 
 	function updateDomEditor() {
@@ -176,7 +176,6 @@
 					let data = JSON.parse(atob(prompt("Code: ")));
 					sprites = data.sprites;
 					scripts = data.scripts;
-					value = scripts["main"];
 					updateSprites();
 					updateScripts();
 				}}> Import </button>
@@ -184,7 +183,26 @@
 			</div>
 		</div>
 	</div>
-	<div class="flex flex-row grow gap-2 overflow-hidden">
-		<CodeMirror bind:value on:change={updateScripts} lang={javascript()} theme={oneDark} useTab={true} tabSize={4} class="grow" styles={{"&": { height: "100%" }}}/>
+	<div class="flex flex-col grow overflow-hidden bg-slate-800">
+		<div class="flex flex-row px-1 pt-1 text-slate-300 border-slate-500 border-b">
+			{#each Object.keys(scripts) as script}
+			<button class="inline p-2 min-w-[72px] bg-slate-800 border-slate-500 border-x border-t rounded-t-lg" on:click={() => {
+				selectedScript = script;
+				updateScripts();
+			}}> {script} </button>
+			{/each}
+			<button class="inline p-2 bg-slate-600 border-slate-500 border-x border-t rounded-t-lg" on:click={() => {
+				let script = prompt("Script name:");
+				if (!script) return;
+				scripts[script] = "";
+				selectedScript = script;
+				updateScripts();
+			}}> Add script </button>
+		</div>
+		{#if selectedScript}
+		<CodeMirror bind:value={scripts[selectedScript]} on:change={updateScripts} lang={javascript()} theme={oneDark} useTab={true} tabSize={4} class="grow" styles={{"&": { height: "100%" }}}/>
+		{:else}
+		<div class="p-2 text-slate-300"> Create a script to get started! </div>
+		{/if}
 	</div>
 </div>
