@@ -28,7 +28,7 @@
 		}} />
 		{:else if props[prop].type == "number"}
 		<input class="w-full" id={prop} bind:value={props[prop].value} type="number" on:change={({ target }) => {
-			object[prop] = parseInt(target.value);
+			object[prop] = parseFloat(target.value);
 			dispatch("update");
 		}} />
 		{:else if props[prop].type == "boolean"}

@@ -24,5 +24,5 @@ function drawSprite(sprite) {
 
 function draw() {
 	clear();
-	sprites.forEach(drawSprite);
+	Object.values(sprites).forEach(drawSprite);
 }

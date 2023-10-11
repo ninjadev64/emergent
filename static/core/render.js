@@ -19,7 +19,5 @@ function drawSprite(sprite) {
 
 function draw() {
 	clear();
-	modules.forEach(async (module) => module.update());
-	sprites.forEach(drawSprite);
+	Object.values(sprites).forEach(drawSprite);
 }
-

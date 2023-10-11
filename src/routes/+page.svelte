@@ -7,16 +7,20 @@
 	let iframe;
 	let cw, ch;
 
-	let sprites = [];
+	import { v4 as uuid } from "uuid";
+	let sprites = {};
 	let scripts = {};
 	let selectedScript;
 
-	import Inspector from "../components/inspector/Inspector.svelte";
+	let saveValue;
+
+	import scriptPlaceholder from "/public/placeholder.js?raw";
+
+	import GenericInspector from "../components/inspector/GenericInspector.svelte";
+    import CollisionLogicInspector from "../components/inspector/CollisionLogicInspector.svelte";
 	let selected;
 
-	let inspectorName;
-	let inspectorTransform;
-	let inspectorBody;
+	let inspectorName, inspectorTransform, inspectorBody, inspectorCollisionLogic;
 
 	import { onMount } from "svelte";
 	onMount(updateDomEditor);
@@ -42,7 +46,7 @@
 			<body>
 				<script type="text/javascript" src="https://unpkg.com/default-passive-events"><\/script>
 				<script src="https://cdn.jsdelivr.net/npm/p5@1/lib/p5.min.js"><\/script>
-				<script src="/libeditor.js"><\/script>
+				<script src="/editor.js"><\/script>
 			</body>
 		</html>
 		`);
@@ -82,12 +86,16 @@
 			inspectorName.value = sprite.name;
 			inspectorTransform.updateObject(sprite.transform);
 			inspectorBody.updateObject(sprite.body);
+			inspectorCollisionLogic.updateObject(sprite.body.collisionFilter);
 		}, 100);
 	}
 
 	function createSprite(type) {
-		sprites.push({
-			name: `Sprite ${sprites.length + 1}`,
+		let u = uuid();
+		if (sprites[u]) return;
+		sprites[u] = {
+			id: u,
+			name: `Sprite ${Object.keys(sprites).length + 1}`,
 			type,
 			scripts: [],
 			transform: {
@@ -98,9 +106,13 @@
 				isStatic: false,
 				density: 0.001,
 				friction: 0.1,
-				frictionAir: 0.01
+				frictionAir: 0.01,
+				collisionFilter: {
+					category: 1,
+					mask: -1
+				}
 			}
-		});
+		};
 		updateSprites();
 	}
 </script>
@@ -135,8 +147,13 @@
 						updateSprites();
 					}} />
 				</div>
-				<Inspector bind:this={inspectorTransform} object={selected.transform} name="Transform" props={{ "x": { type: "number", name: "X" }, "y": { type: "number", name: "Y" }, "width": { type: "number", name: "Width" }, "height": { type: "number", name: "Height" } }} on:update={updateSprites} />
-				<Inspector bind:this={inspectorBody} object={selected.body} name="Body" props={{ "isStatic": { type: "boolean", name: "Static" }, "density": { type: "number", name: "Density" }, "friction": { type: "number", name: "Friction" }, "frictionAir": { type: "number", name: "Air resistance" } }} on:update={updateSprites} />
+				<div class="inspector">
+					<p class="font-bold"> ID </p>
+					<input class="w-full" readonly value={selected.id} />
+				</div>
+				<GenericInspector bind:this={inspectorTransform} object={selected.transform} name="Transform" props={{ "x": { type: "number", name: "X" }, "y": { type: "number", name: "Y" }, "width": { type: "number", name: "Width" }, "height": { type: "number", name: "Height" } }} on:update={updateSprites} />
+				<GenericInspector bind:this={inspectorBody} object={selected.body} name="Body" props={{ "isStatic": { type: "boolean", name: "Static" }, "density": { type: "number", name: "Density" }, "friction": { type: "number", name: "Friction" }, "frictionAir": { type: "number", name: "Air resistance" } }} on:update={updateSprites} />
+				<CollisionLogicInspector bind:this={inspectorCollisionLogic} filter={selected.body.collisionFilter} />
 				{#each selected.scripts as script}
 				<div class="inspector">{script}</div>
 				{/each}
@@ -165,7 +182,7 @@
 					<button class="block" on:click={() => createSprite("rect")}> + Square </button>
 					<button class="block" on:click={() => createSprite("ellipse")}> + Circle </button>
 				</div>
-				{#each sprites as sprite}
+				{#each Object.values(sprites) as sprite}
 				<div class="block p-2 cursor-pointer hover:bg-slate-700">
 					<button on:click={() => updateInspector(sprite)}> {sprite.name} </button>
 				</div>
@@ -173,13 +190,14 @@
 			</div>
 			<div class="p-4 text-slate-200">
 				<button class="block" on:click={() => {
-					let data = JSON.parse(atob(prompt("Code: ")));
+					let data = JSON.parse(atob(saveValue));
 					sprites = data.sprites;
 					scripts = data.scripts;
 					updateSprites();
 					updateScripts();
 				}}> Import </button>
-				<button class="block" on:click={() => prompt("Exported value:", btoa(JSON.stringify({ sprites, scripts })))}> Export </button>
+				<button class="block" on:click={() => saveValue = btoa(JSON.stringify({ sprites, scripts }))}> Export </button>
+				<input bind:value={saveValue} class="mt-2 rounded-sm bg-slate-700" />
 			</div>
 		</div>
 	</div>
@@ -194,13 +212,13 @@
 			<button class="inline p-2 bg-slate-600 border-slate-500 border-x border-t rounded-t-lg" on:click={() => {
 				let script = prompt("Script name:");
 				if (!script) return;
-				scripts[script] = "";
+				scripts[script] = scriptPlaceholder;
 				selectedScript = script;
 				updateScripts();
 			}}> Add script </button>
 		</div>
 		{#if selectedScript}
-		<CodeMirror bind:value={scripts[selectedScript]} on:change={updateScripts} lang={javascript()} theme={oneDark} useTab={true} tabSize={4} class="grow" styles={{"&": { height: "100%" }}}/>
+		<CodeMirror bind:value={scripts[selectedScript]} on:change={updateScripts} lang={javascript()} theme={oneDark} useTab={true} lineWrapping={true} tabSize={4} class="grow" styles={{"&": { height: "100%" }}}/>
 		{:else}
 		<div class="p-2 text-slate-300"> Create a script to get started! </div>
 		{/if}
