@@ -20,14 +20,16 @@
     import CollisionLogicInspector from "../components/inspector/CollisionLogicInspector.svelte";
 	let selected;
 
-	let inspectorName, inspectorTransform, inspectorBody, inspectorCollisionLogic;
+	let inspectorName, inspectorTransform, inspectorMaterial, inspectorImage, inspectorBody, inspectorCollisionLogic;
 
 	import { onMount } from "svelte";
 	onMount(updateDomEditor);
 
 	function updateSprites() {
 		sprites = sprites;
-		iframe.contentWindow.acceptSprites && iframe.contentWindow.acceptSprites(sprites);
+		iframe.contentWindow.updateSprite && Object.values(sprites).forEach((sprite) => {
+			iframe.contentWindow.updateSprite(sprite);
+		});
 	}
 
 	function updateScripts() {
@@ -45,8 +47,10 @@
 			</head>
 			<body>
 				<script type="text/javascript" src="https://unpkg.com/default-passive-events"><\/script>
-				<script src="https://cdn.jsdelivr.net/npm/p5@1/lib/p5.min.js"><\/script>
+				<script src="https://cdn.jsdelivr.net/npm/eruda" onload="eruda.init();"><\/script>
+				<script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"><\/script>
 				<script src="/editor.js"><\/script>
+				<script src="/core/render.js"><\/script>
 			</body>
 		</html>
 		`);
@@ -64,7 +68,7 @@
 			</head>
 			<body>
 				<script type="text/javascript" src="https://unpkg.com/default-passive-events"><\/script>
-				<script src="https://cdn.jsdelivr.net/npm/p5@1/lib/p5.min.js"><\/script>
+				<script src="https://cdn.jsdelivr.net/npm/eruda" onload="eruda.init();"><\/script>
 				<script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"><\/script>
 				<script>
 					sprites = JSON.parse('${JSON.stringify(sprites)}');
@@ -85,6 +89,8 @@
 		setTimeout(() => {
 			inspectorName.value = sprite.name;
 			inspectorTransform.updateObject(sprite.transform);
+			inspectorMaterial.updateObject(sprite.render);
+			inspectorImage.updateObject(sprite.render.sprite);
 			inspectorBody.updateObject(sprite.body);
 			inspectorCollisionLogic.updateObject(sprite.body.collisionFilter);
 		}, 100);
@@ -110,6 +116,18 @@
 				collisionFilter: {
 					category: 1,
 					mask: -1
+				}
+			},
+			render: {
+				fillStyle: "orange",
+				opacity: 0.5,
+				lineWidth: 0,
+				sprite: {
+					texture: "",
+					xOffset: 0,
+					yOffset: 0,
+					xScale: 1,
+					yScale: 1
 				}
 			}
 		};
@@ -152,6 +170,8 @@
 					<input class="w-full" readonly value={selected.id} />
 				</div>
 				<GenericInspector bind:this={inspectorTransform} object={selected.transform} name="Transform" props={{ "x": { type: "number", name: "X" }, "y": { type: "number", name: "Y" }, "width": { type: "number", name: "Width" }, "height": { type: "number", name: "Height" } }} on:update={updateSprites} />
+				<GenericInspector bind:this={inspectorMaterial} object={selected.render} name="Material" props={{ "fillStyle": { type: "text", name: "Fill style" }, "opacity": { type: "number", name: "Opacity" }, "lineWidth": { type: "number", name: "Line width" } }} on:update={updateSprites} />
+				<GenericInspector bind:this={inspectorImage} object={selected.render.sprite} name="Image" props={{ "texture": { type: "text", name: "Texture path" }, "xOffset": { type: "number", name: "X offset" }, "yOffset": { type: "number", name: "Y offset" }, "xScale": { type: "number", name: "X scale" }, "yScale": { type: "number", name: "Y scale" } }} on:update={updateSprites} />
 				<GenericInspector bind:this={inspectorBody} object={selected.body} name="Body" props={{ "isStatic": { type: "boolean", name: "Static" }, "density": { type: "number", name: "Density" }, "friction": { type: "number", name: "Friction" }, "frictionAir": { type: "number", name: "Air resistance" } }} on:update={updateSprites} />
 				<CollisionLogicInspector bind:this={inspectorCollisionLogic} filter={selected.body.collisionFilter} />
 				{#each selected.scripts as script}

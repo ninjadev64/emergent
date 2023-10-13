@@ -8,11 +8,11 @@ function createSprite(id, sprite) {
 	const t = sprite.transform;
 	switch (sprite.type) {
 		case "rect": {
-			bodies[id] = Matter.Bodies.rectangle(t.x, t.y, t.width, t.height, sprite.body);
+			bodies[id] = Matter.Bodies.rectangle(t.x, t.y, t.width, t.height, { ...structuredClone(sprite.body), render: structuredClone(sprite.render) });
 			break;
 		}
 		case "ellipse": {
-			bodies[id] = Matter.Bodies.circle(t.x, t.y, t.width / 2, sprite.body);
+			bodies[id] = Matter.Bodies.circle(t.x, t.y, t.width / 2, { ...structuredClone(sprite.body), render: structuredClone(sprite.render) });
 			break;
 		}
 	}

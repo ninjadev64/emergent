@@ -1,28 +1,30 @@
 let sprites = [];
 
-function setup() {
-	createCanvas(windowWidth, windowHeight);
-}
+const engine = Matter.Engine.create();
+const runner = Matter.Runner.create();
+Matter.Runner.run(runner, engine);
 
-function acceptSprites(s) {
-	sprites = s;
-}
+let bodies = {};
 
-function drawSprite(sprite) {
+function createSprite(id, sprite) {
 	const t = sprite.transform;
 	switch (sprite.type) {
 		case "rect": {
-			rect(t.x - (t.width / 2), t.y - (t.height / 2), t.width, t.height);
+			bodies[id] = Matter.Bodies.rectangle(t.x, t.y, t.width, t.height, { isStatic: true, render: structuredClone(sprite.render) });
 			break;
 		}
 		case "ellipse": {
-			ellipse(t.x, t.y, t.width, t.height);
+			bodies[id] = Matter.Bodies.circle(t.x, t.y, t.width / 2, { isStatic: true, render: structuredClone(sprite.render) });
 			break;
 		}
 	}
+	Matter.Composite.add(engine.world, bodies[id]);
 }
 
-function draw() {
-	clear();
-	Object.values(sprites).forEach(drawSprite);
+function updateSprite(s) {
+	if (bodies[s.id]) {
+		Matter.Composite.remove(engine.world, bodies[s.id]);
+		delete bodies[s.id];
+	}
+	createSprite(s.id, s);
 }
