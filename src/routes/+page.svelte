@@ -74,11 +74,11 @@
 					sprites = JSON.parse('${JSON.stringify(sprites)}');
 					scripts = ${JSON.stringify(scripts)};
 				<\/script>
-				<script src="/core/globals.js"><\/script>
 				<script src="/core/physics.js"><\/script>
 				<script src="/core/render.js"><\/script>
 				<script src="/core/keyboard.js"><\/script>
 				<script src="/core/scripts.js"><\/script>
+				<script src="/core/entry.js"><\/script>
 			</body>
 		</html>
 		`);

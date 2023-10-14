@@ -1,6 +1,13 @@
+let e;
+if (typeof physicsEngine == "object") {
+	e = physicsEngine.engine;
+} else {
+	e = engine;
+}
+
 const render = Matter.Render.create({
     element: document.body,
-    engine: engine,
+    engine: e,
 	options: {
 		wireframes: false,
 		background: "transparent",

@@ -1,86 +1,107 @@
-const engine = Matter.Engine.create();
-const runner = Matter.Runner.create();
-Matter.Runner.run(runner, engine);
+const physicsEngine = new (class PhysicsEngine {
+	engine;
+	runner;
+	bodies = {};
+	updateListeners = [];
+	
+	constructor() {
+		this.engine = Matter.Engine.create();
+		this.runner = Matter.Runner.create();
+		Matter.Runner.run(this.runner, this.engine);
 
-let bodies = {};
+		Matter.Events.on(this.engine, "afterUpdate", () => {
+			this.updateListeners.forEach((listener) => listener.updateListener());
+			if (Keyboard.clear) Keyboard.clear();
+		});
+	}
 
-function createSprite(id, sprite) {
-	const t = sprite.transform;
-	switch (sprite.type) {
-		case "rect": {
-			bodies[id] = Matter.Bodies.rectangle(t.x, t.y, t.width, t.height, { ...structuredClone(sprite.body), render: structuredClone(sprite.render) });
-			break;
+	createBody(id, type, transform, body, render, updateListener) {
+		switch (type) {
+			case "rect": {
+				this.bodies[id] = Matter.Bodies.rectangle(
+					transform.x, transform.y, transform.width, transform.height, 
+					{ ...body, render: render }
+				);
+				break;
+			}
+			case "ellipse": {
+				this.bodies[id] = Matter.Bodies.circle(
+					transform.x, transform.y, transform.width / 2,
+					{ ...body, render: render }
+				);
+				break;
+			}
 		}
-		case "ellipse": {
-			bodies[id] = Matter.Bodies.circle(t.x, t.y, t.width / 2, { ...structuredClone(sprite.body), render: structuredClone(sprite.render) });
-			break;
-		}
-	}
-	Matter.Composite.add(engine.world, bodies[id]);
-}
-for (const [id, sprite] of Object.entries(sprites)) {
-	createSprite(id, sprite);
-}
-
-Matter.Events.on(engine, "afterUpdate", () => {
-	Object.values(sprites).forEach((sprite) => {
-		sprite.transform.x = bodies[sprite.id].position.x;
-		sprite.transform.y = bodies[sprite.id].position.y;
-		(sprite.modules ?? []).forEach((module) => module.update());
-	});
-	if (Keyboard.clear) Keyboard.clear();
-});
-
-const Body = new (class {
-	getVelocity(sprite) {
-		return Matter.Body.getVelocity(bodies[sprite.id]);
-	}
-
-	setVelocity(sprite, { x = bodies[sprite.id].velocity.x, y = bodies[sprite.id].velocity.y }) {
-		Matter.Body.setVelocity(bodies[sprite.id], Matter.Vector.create(x, y));
-	}
-
-	applyForce(sprite, { x: mx = 0, y: my = 0 } = {}, { x: px = bodies[sprite.id].position.x, y: py = bodies[sprite.id].position.y } = {}) {
-		Matter.Body.applyForce(bodies[sprite.id], Matter.Vector.create(px, py), Matter.Vector.create(mx, my));
-	}
-
-	setPosition(sprite, { x, y }, updateVelocity = false) {
-		Matter.Body.setPosition(bodies[sprite.id], Matter.Vector.create(x, y), updateVelocity);
-	}
-
-	translate(sprite, { x, y }, updateVelocity = false) {
-		Matter.Body.translate(bodies[sprite.id], Matter.Vector.create(x, y), updateVelocity);
-	}
-
-	rotate(sprite, rotation, { x = bodies[sprite.id].position.x, y = bodies[sprite.id].position.y } = {}, updateVelocity = false) {
-		Matter.Body.rotate(bodies[sprite.id], rotation, Matter.Vector.create(x, y), updateVelocity);
-	}
-
-	setAngle(sprite, angle, updateVelocity = false) {
-		Matter.Body.setAngle(bodies[sprite.id], angle, updateVelocity);
-	}
-
-	setAngularVelocity(sprite, velocity) {
-		Matter.Body.setAngularVelocity(bodies[sprite.id], velocity);
-	}
-
-	setCentre(sprite, { x = bodies[sprite.id].position.x, y = bodies[sprite.id].position.y }, relative) {
-		Matter.Body.setCentre(bodies[sprite.id], Matter.Vector.create(x, y), relative);
-	}
-
-	setDensity(sprite, density) {
-		Matter.Body.setDensity(bodies[sprite.id], density);
-	}
-
-	setStatic(sprite, isStatic) {
-		Matter.Body.setStatic(bodies[sprite.id], isStatic);
-	}
-
-	scale(sprite, scaleX, scaleY, { x = bodies[sprite.id].position.x, y = bodies[sprite.id].position.y } = {}) {
-		Matter.Body.scale(bodies[sprite.id], scaleX, scaleY, Matter.Vector.create(x, y));
-	}
-
-	collides(a, b) {
-		return Matter.Collision.collides(bodies[typeof a == "object" ? a.id : sprites[a].id], bodies[typeof b == "object" ? b.id : sprites[b].id]);
+		Matter.Composite.add(this.engine.world, this.bodies[id]);
+		this.updateListeners.push(updateListener);
+		return this.bodies[id];
 	}
 })();
+
+class SpriteBody {
+	#sprite;
+	#body;
+
+	constructor(sprite, type, transform, body, render) {
+		this.#sprite = sprite;
+		this.#body = physicsEngine.createBody(sprite.id, type, transform, body, render, this);
+	}
+
+	updateListener() {
+		(this.#sprite.scripting.modules ?? []).forEach((module) => module.update());
+	}
+
+	getVelocity() {
+		return Matter.Body.getVelocity(this.#body);
+	}
+
+	setVelocity({ x = this.#body.velocity.x, y = this.#body.velocity.y }) {
+		Matter.Body.setVelocity(this.#body, Matter.Vector.create(x, y));
+	}
+
+	applyForce({ x: mx = 0, y: my = 0 } = {}, { x: px = this.#body.position.x, y: py = this.#body.position.y } = {}) {
+		Matter.Body.applyForce(this.#body, Matter.Vector.create(px, py), Matter.Vector.create(mx, my));
+	}
+
+	setPosition({ x, y }, updateVelocity = false) {
+		Matter.Body.setPosition(this.#body, Matter.Vector.create(x, y), updateVelocity);
+	}
+
+	translate({ x, y }, updateVelocity = false) {
+		Matter.Body.translate(this.#body, Matter.Vector.create(x, y), updateVelocity);
+	}
+
+	rotate(rotation, { x = this.#body.position.x, y = this.#body.position.y } = {}, updateVelocity = false) {
+		Matter.Body.rotate(this.#body, rotation, Matter.Vector.create(x, y), updateVelocity);
+	}
+
+	setAngle(angle, updateVelocity = false) {
+		Matter.Body.setAngle(this.#body, angle, updateVelocity);
+	}
+
+	setAngularVelocity(velocity) {
+		Matter.Body.setAngularVelocity(this.#body, velocity);
+	}
+
+	setCentre({ x = this.#body.position.x, y = this.#body.position.y }, relative) {
+		Matter.Body.setCentre(this.#body, Matter.Vector.create(x, y), relative);
+	}
+
+	setDensity(density) {
+		Matter.Body.setDensity(this.#body, density);
+	}
+
+	setStatic(isStatic) {
+		Matter.Body.setStatic(this.#body, isStatic);
+	}
+
+	scale(scaleX, scaleY, { x = this.#body.position.x, y = this.#body.position.y } = {}) {
+		Matter.Body.scale(this.#body, scaleX, scaleY, Matter.Vector.create(x, y));
+	}
+}
+
+class Body {
+	static collides(a, b) {
+		return Matter.Collision.collides(physicsEngine.bodies[typeof a == "object" ? a.id : sprites[a].id], physicsEngine.bodies[typeof b == "object" ? b.id : sprites[b].id]);
+	}
+}

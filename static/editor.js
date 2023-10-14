@@ -22,6 +22,7 @@ function createSprite(id, sprite) {
 }
 
 function updateSprite(s) {
+	s = structuredClone(s);
 	if (bodies[s.id]) {
 		Matter.Composite.remove(engine.world, bodies[s.id]);
 		delete bodies[s.id];
