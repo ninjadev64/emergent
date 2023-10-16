@@ -7,12 +7,12 @@
 	export let props;
 	export let selfUpdating = false;
 	
-	export function updateObject(o) {
+	export function updateObject(o, p) {
 		object = o;
-		for (const [key, value] of Object.entries(props)) {
+		props = p ?? props;
+		for (const [ key, value ] of Object.entries(props)) {
 			value.value = object[key];
 		}
-		props = props;
 	}
 	if (selfUpdating) setTimeout(() => updateObject(object), 100);
 </script>
