@@ -10,6 +10,7 @@
 	import { v4 as uuid } from "uuid";
 	let sprites = {};
 	let scripts = {};
+	let modules = {};
 	let selectedScript;
 
 	let saveValue;
@@ -28,7 +29,7 @@
 	function updateSprites() {
 		sprites = sprites;
 		iframe.contentWindow.updateSprite && Object.values(sprites).forEach((sprite) => {
-			iframe.contentWindow.updateSprite(sprite);
+			iframe.contentWindow.updateSprite(sprite.id, structuredClone(sprite));
 		});
 	}
 
@@ -103,7 +104,7 @@
 			id: u,
 			name: `Sprite ${Object.keys(sprites).length + 1}`,
 			type,
-			scripts: [],
+			scripts: {},
 			transform: {
 				x: cw / 2, y: ch / 2,
 				width: 100, height: 100
@@ -169,18 +170,34 @@
 					<p class="font-bold"> ID </p>
 					<input class="w-full" readonly value={selected.id} />
 				</div>
-				<GenericInspector bind:this={inspectorTransform} object={selected.transform} name="Transform" props={{ "x": { type: "number", name: "X" }, "y": { type: "number", name: "Y" }, "width": { type: "number", name: "Width" }, "height": { type: "number", name: "Height" } }} on:update={updateSprites} />
-				<GenericInspector bind:this={inspectorMaterial} object={selected.render} name="Material" props={{ "fillStyle": { type: "text", name: "Fill style" }, "opacity": { type: "number", name: "Opacity" }, "lineWidth": { type: "number", name: "Line width" } }} on:update={updateSprites} />
-				<GenericInspector bind:this={inspectorImage} object={selected.render.sprite} name="Image" props={{ "texture": { type: "text", name: "Texture path" }, "xOffset": { type: "number", name: "X offset" }, "yOffset": { type: "number", name: "Y offset" }, "xScale": { type: "number", name: "X scale" }, "yScale": { type: "number", name: "Y scale" } }} on:update={updateSprites} />
-				<GenericInspector bind:this={inspectorBody} object={selected.body} name="Body" props={{ "isStatic": { type: "boolean", name: "Static" }, "density": { type: "number", name: "Density" }, "friction": { type: "number", name: "Friction" }, "frictionAir": { type: "number", name: "Air resistance" } }} on:update={updateSprites} />
-				<CollisionLogicInspector bind:this={inspectorCollisionLogic} filter={selected.body.collisionFilter} />
-				{#each selected.scripts as script}
-				<div class="inspector">{script}</div>
+				<GenericInspector on:update={updateSprites} name="Transform" bind:this={inspectorTransform} object={selected.transform} props={{ "x": { type: "number", name: "X" }, "y": { type: "number", name: "Y" }, "width": { type: "number", name: "Width" }, "height": { type: "number", name: "Height" } }} />
+				<GenericInspector on:update={updateSprites} name="Material" bind:this={inspectorMaterial} object={selected.render} props={{ "fillStyle": { type: "text", name: "Fill style" }, "opacity": { type: "number", name: "Opacity" }, "lineWidth": { type: "number", name: "Line width" } }} />
+				<GenericInspector on:update={updateSprites} name="Image" bind:this={inspectorImage} object={selected.render.sprite} props={{ "texture": { type: "text", name: "Texture path" }, "xOffset": { type: "number", name: "X offset" }, "yOffset": { type: "number", name: "Y offset" }, "xScale": { type: "number", name: "X scale" }, "yScale": { type: "number", name: "Y scale" } }} />
+				<GenericInspector on:update={updateSprites} name="Body" bind:this={inspectorBody} object={selected.body} props={{ "isStatic": { type: "boolean", name: "Static" }, "density": { type: "number", name: "Density" }, "friction": { type: "number", name: "Friction" }, "frictionAir": { type: "number", name: "Air resistance" } }} />
+				<CollisionLogicInspector on:update={updateSprites} bind:this={inspectorCollisionLogic} filter={selected.body.collisionFilter} />
+				{#each Object.keys(selected.scripts) as script}
+				<GenericInspector object={selected.scripts[script]} name={script} props={modules[script].config} selfUpdating={true}>
+					<div class="flex flex-row float-right space-x-2">
+						<button on:click={async () => {
+							modules[script] = (await import(/* @vite-ignore */ "data:text/javascript;base64," + btoa(scripts[script]))).default;
+							modules = modules;
+						}}> ⟳ </button>
+						<button on:click={() => {
+							delete selected.scripts[script];
+							selected.scripts = selected.scripts;
+						}}> × </button>
+					</div>
+				</GenericInspector>
 				{/each}
 				<div class="inspector">
 					<p class="font-bold"> Add script </p>
-					<select class="block w-full" on:change={({ target }) => {
-						selected.scripts.push(target.value);
+					<select class="block w-full" on:change={async ({ target }) => {
+						let defaults = {};
+						if (!modules[target.value]) {
+							modules[target.value] = (await import(/* @vite-ignore */ "data:text/javascript;base64," + btoa(scripts[target.value]))).default;
+						}
+						Object.entries(modules[target.value].config).forEach(([key, value]) => defaults[key] = value.default);
+						selected.scripts[target.value] = defaults;
 						selected.scripts = selected.scripts;
 						target.value = "emergent_placeholderoption";
 						updateScripts();
@@ -202,9 +219,14 @@
 					<button class="block" on:click={() => createSprite("rect")}> + Square </button>
 					<button class="block" on:click={() => createSprite("ellipse")}> + Circle </button>
 				</div>
-				{#each Object.values(sprites) as sprite}
+				{#each Object.entries(sprites) as [id, sprite]}
 				<div class="block p-2 cursor-pointer hover:bg-slate-700">
 					<button on:click={() => updateInspector(sprite)}> {sprite.name} </button>
+					<button class="float-right" on:click={() => {
+						delete sprites[id];
+						updateSprites();
+						iframe.contentWindow.updateSprite && iframe.contentWindow.updateSprite(id, null);
+					}}> × </button>
 				</div>
 				{/each}
 			</div>
@@ -213,6 +235,9 @@
 					let data = JSON.parse(atob(saveValue));
 					sprites = data.sprites;
 					scripts = data.scripts;
+					Object.entries(scripts).forEach(async ([script, code]) => {
+						modules[script] = (await import(/* @vite-ignore */ "data:text/javascript;base64," + btoa(code))).default;
+					});
 					updateSprites();
 					updateScripts();
 				}}> Import </button>

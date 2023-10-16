@@ -21,11 +21,11 @@ function createSprite(id, sprite) {
 	Matter.Composite.add(engine.world, bodies[id]);
 }
 
-function updateSprite(s) {
-	s = structuredClone(s);
-	if (bodies[s.id]) {
-		Matter.Composite.remove(engine.world, bodies[s.id]);
-		delete bodies[s.id];
+function updateSprite(id, s) {
+	if (bodies[id]) {
+		Matter.Composite.remove(engine.world, bodies[id]);
+		delete bodies[id];
 	}
-	createSprite(s.id, s);
+	if (!s) return;
+	createSprite(id, s);
 }

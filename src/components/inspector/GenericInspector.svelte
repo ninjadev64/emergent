@@ -1,12 +1,12 @@
 <script>
     import { createEventDispatcher } from "svelte";
+	const dispatch = createEventDispatcher();
 
 	export let name;
 	export let object;
 	export let props;
+	export let selfUpdating = false;
 	
-	const dispatch = createEventDispatcher();
-
 	export function updateObject(o) {
 		object = o;
 		for (const [key, value] of Object.entries(props)) {
@@ -14,9 +14,11 @@
 		}
 		props = props;
 	}
+	if (selfUpdating) setTimeout(() => updateObject(object), 100);
 </script>
 
 <div class="inspector">
+	<slot />
 	<span class="font-bold"> {name} </span>
 	{#each Object.keys(props) as prop}
 	<div class="block">

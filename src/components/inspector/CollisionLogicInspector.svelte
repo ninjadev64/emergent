@@ -1,4 +1,7 @@
 <script>
+	import { createEventDispatcher } from "svelte";
+	const dispatch = createEventDispatcher();
+	
 	export let filter;
 	let category, mask;
 	
@@ -22,6 +25,7 @@
 	<p class="font-bold"> Layer </p>
 	<input bind:this={category} class="w-full" type="number" min="0" max="31" placeholder="0-31" on:change={({ target }) => {
 		filter.category = 2**(target.value);
+		dispatch("update");
 	}} />
 
 	<p class="font-bold"> Collides with </p>
@@ -34,5 +38,6 @@
 		let a = [];
 		target.value.split(",").forEach((l) => a.push(parseInt(l)));
 		filter.mask = a.length == 1 ? 2**(a[0]) : a.reduce((a, b) => 2**a | 2**b);
+		dispatch("update");
 	}} />
 </div>
