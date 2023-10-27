@@ -13,7 +13,7 @@ function createSprite(id, sprite) {
 			bodies[id] = Matter.Bodies.rectangle(t.x, t.y, t.width, t.height, { isStatic: true, render: structuredClone(sprite.render) });
 			break;
 		}
-		case "ellipse": {
+		case "circle": {
 			bodies[id] = Matter.Bodies.circle(t.x, t.y, t.width / 2, { isStatic: true, render: structuredClone(sprite.render) });
 			break;
 		}

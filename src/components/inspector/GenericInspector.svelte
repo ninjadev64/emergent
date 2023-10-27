@@ -20,25 +20,25 @@
 <div class="inspector">
 	<slot />
 	<span class="font-bold"> {name} </span>
-	{#each Object.keys(props) as prop}
-	<div class="block">
-		<p> {props[prop].name}: </p>
-		{#if props[prop].type == "text"}
-		<input class="w-full" id={prop} bind:value={props[prop].value} type="text" on:change={({ target }) => {
-			object[prop] = target.value;
-			dispatch("update");
-		}} />
-		{:else if props[prop].type == "number"}
-		<input class="w-full" id={prop} bind:value={props[prop].value} type="number" on:change={({ target }) => {
-			object[prop] = parseFloat(target.value);
-			dispatch("update");
-		}} />
-		{:else if props[prop].type == "boolean"}
-		<input id={prop} bind:checked={props[prop].value} type="checkbox" on:change={({ target }) => {
-			object[prop] = target.checked;
-			dispatch("update");
-		}} />
-		{/if}
-	</div>
-	{/each}
+	{#each Object.keys(props) as prop}{#if !props[prop].disabled}
+		<div class="block">
+			<p> {props[prop].name}: </p>
+			{#if props[prop].type == "text"}
+				<input class="w-full" id={prop} bind:value={props[prop].value} type="text" on:change={({ target }) => {
+					object[prop] = target.value;
+					dispatch("update");
+				}} />
+			{:else if props[prop].type == "number"}
+				<input class="w-full" id={prop} bind:value={props[prop].value} type="number" on:change={({ target }) => {
+					object[prop] = parseFloat(target.value);
+					dispatch("update");
+				}} />
+			{:else if props[prop].type == "boolean"}
+				<input id={prop} bind:checked={props[prop].value} type="checkbox" on:change={({ target }) => {
+					object[prop] = target.checked;
+					dispatch("update");
+				}} />
+			{/if}
+		</div>
+	{/if}{/each}
 </div>

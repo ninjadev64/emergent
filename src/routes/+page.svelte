@@ -15,9 +15,13 @@
 
 	import Inspector from "../components/inspector/Inspector.svelte";
 	import ScriptEditor from "../components/ScriptEditor.svelte";
+    import ListedSprite from "../components/ListedSprite.svelte";
 	
 	import { onMount } from "svelte";
-	onMount(updateDomEditor);
+	onMount(() => {
+		eruda.init();
+		updateDomEditor();
+	});
 
 	function updateSprites() {
 		sprites = sprites;
@@ -78,7 +82,7 @@
 		`);
 	}
 
-	function createSprite(type) {
+	function createSprite(type, parent) {
 		let u = uuid();
 		if (sprites[u]) return;
 		sprites[u] = {
@@ -111,14 +115,21 @@
 					xScale: 1,
 					yScale: 1
 				}
-			}
+			},
+			isTopLevel: true,
+			children: []
 		};
+		if (parent) {
+			sprites[u].isTopLevel = false;
+			sprites[u].body.isStatic = true;
+			parent.children = [ ...parent.children, u ];
+		}
 		updateSprites();
 	}
 </script>
 
 <svelte:head>
-	<script src="https://cdn.jsdelivr.net/npm/eruda" onload="eruda.init();"></script>
+	<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
 </svelte:head>
 
 <!-- Navbar -->
@@ -128,9 +139,9 @@
 		<h1> Emergent </h1>
 	</div>
 	{#if state == "editor"}
-	<button on:click={updateDomRun}> Run </button>
+		<button on:click={updateDomRun}> Run </button>
 	{:else}
-	<button on:click={updateDomEditor}> Stop </button>
+		<button on:click={updateDomEditor}> Stop </button>
 	{/if}
 	<span class="space-x-4">
 		<span> Projects </span>
@@ -150,12 +161,17 @@
 			<!-- Inspector -->
 			<div class="min-w-[30%] p-4 space-y-4 overflow-auto bg-slate-600 text-slate-200">
 				{#if selected}
-				<Inspector bind:this={inspector} on:update={() => {
-					updateSprites();
-					updateScripts();
-				}} sprite={selected} scripts={scripts} modules={modules} />
+					<Inspector bind:this={inspector} sprite={selected} scripts={scripts} modules={modules}
+						on:update={() => {
+							updateSprites();
+							updateScripts();
+						}}
+						on:createChild={({ detail: type }) => {
+							createSprite(type, selected);
+						}}
+					/>
 				{:else}
-				No sprite selected
+					No sprite selected
 				{/if}
 			</div>
 		</div>
@@ -165,27 +181,24 @@
 			<!-- Sprite list -->
 			<div class="w-1/3 p-4 bg-slate-600 text-slate-200">
 				<div class="pb-2 mb-4 border-b-2">
-					<button class="block" on:click={() => createSprite("rect")}> + Square </button>
-					<button class="block" on:click={() => createSprite("ellipse")}> + Circle </button>
+					<button class="block" on:click={() => createSprite("rect")}> + Rectangle </button>
+					<button class="block" on:click={() => createSprite("circle")}> + Circle </button>
 				</div>
-				{#each Object.entries(sprites) as [ id, sprite ]}
-				<div class="block p-2 cursor-pointer hover:bg-slate-700">
-					<button on:click={() => {
-						selected = sprite;
-						if (!inspector) {
-							setTimeout(() => inspector.updateSprite(sprite), 100);
-						} else {
-							inspector.updateSprite(sprite);
-						}
-					}}> {sprite.name} </button>
-					<button class="float-right" on:click={() => {
-						if (selected.id == id) selected = null;
-						delete sprites[id];
-						updateSprites();
-						iframe.contentWindow.updateSprite && iframe.contentWindow.updateSprite(id, null);
-					}}> × </button>
-				</div>
-				{/each}
+				{#each Object.values(sprites) as sprite}{#if sprite.isTopLevel}
+					<ListedSprite sprites={sprites} sprite={sprite} selected={selected ? selected.id : ""}
+						on:select={({ detail: id }) => {
+							selected = sprites[id];
+							if (!inspector) setTimeout(() => inspector.updateSprite(selected), 100);
+							else inspector.updateSprite(selected);
+						}}
+						on:remove={({ detail: id }) => {
+							if (selected.id == id) selected = null;
+							delete sprites[id];
+							updateSprites();
+							iframe.contentWindow.updateSprite && iframe.contentWindow.updateSprite(id, null);
+						}}
+					/>
+				{/if}{/each}
 			</div>
 
 			<!-- Import/export -->

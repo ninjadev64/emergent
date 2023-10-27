@@ -2,6 +2,7 @@ const physicsEngine = new (class PhysicsEngine {
 	engine;
 	runner;
 	bodies = {};
+	children = [];
 	updateListeners = [];
 	
 	constructor() {
@@ -9,13 +10,27 @@ const physicsEngine = new (class PhysicsEngine {
 		this.runner = Matter.Runner.create();
 		Matter.Runner.run(this.runner, this.engine);
 
+		Matter.Events.on(this.engine, "beforeUpdate", () => {
+			this.children.forEach((o) => {
+				const { parent, child } = o;
+				Matter.Body.setPosition(child, Matter.Vector.create(
+					child.position.x + (parent.position.x - o.oldParentPosition.x),
+					child.position.y + (parent.position.y - o.oldParentPosition.y)
+				));
+				o.oldParentPosition = {
+					x: parent.position.x,
+					y: parent.position.y
+				};
+			});
+		})
+
 		Matter.Events.on(this.engine, "afterUpdate", () => {
 			this.updateListeners.forEach((listener) => listener.updateListener());
-			if (Keyboard.clear) Keyboard.clear();
+			if (typeof Keyboard == "object") Keyboard.clear();
 		});
 	}
 
-	createBody(id, type, transform, body, render, updateListener) {
+	createBody(id, type, transform, body, render, parentSprite, updateListener) {
 		switch (type) {
 			case "rect": {
 				this.bodies[id] = Matter.Bodies.rectangle(
@@ -24,7 +39,7 @@ const physicsEngine = new (class PhysicsEngine {
 				);
 				break;
 			}
-			case "ellipse": {
+			case "circle": {
 				this.bodies[id] = Matter.Bodies.circle(
 					transform.x, transform.y, transform.width / 2,
 					{ ...body, render: render }
@@ -32,6 +47,14 @@ const physicsEngine = new (class PhysicsEngine {
 				break;
 			}
 		}
+		if (parentSprite) this.children.push({
+			parent: this.bodies[parentSprite.id],
+			child: this.bodies[id],
+			oldParentPosition: {
+				x: parentSprite.body.position.x,
+				y: parentSprite.body.position.y
+			}
+		});
 		Matter.Composite.add(this.engine.world, this.bodies[id]);
 		this.updateListeners.push(updateListener);
 		return this.bodies[id];
@@ -44,7 +67,7 @@ class SpriteBody {
 
 	constructor(sprite, type, transform, body, render) {
 		this.#sprite = sprite;
-		this.#body = physicsEngine.createBody(sprite.id, type, transform, body, render, this);
+		this.#body = physicsEngine.createBody(sprite.id, type, transform, body, render, sprite.parent, this);
 	}
 
 	updateListener() {
@@ -65,6 +88,10 @@ class SpriteBody {
 
 	setPosition({ x, y }, updateVelocity = false) {
 		Matter.Body.setPosition(this.#body, Matter.Vector.create(x, y), updateVelocity);
+	}
+
+	get position() {
+		return this.#body.position;
 	}
 
 	translate({ x, y }, updateVelocity = false) {

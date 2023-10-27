@@ -19,13 +19,14 @@
 	<!-- Tabs -->
 	<div class="flex flex-row px-1 pt-1 text-slate-300 border-slate-500 border-b">
 		{#each Object.keys(scripts) as script}
-		<button class="inline p-2 min-w-[72px] bg-slate-800 border-slate-500 border-x border-t rounded-t-lg" on:click={() => {
-			selectedScript = script;
-			update();
-		}}> {script} </button>
+			<button class="inline p-2 min-w-[72px] bg-slate-800 border-slate-500 border-x border-t rounded-t-lg" class:!bg-slate-700={script == selectedScript} on:click={() => {
+				selectedScript = script;
+				update();
+			}}> {script} </button>
 		{/each}
 		<button class="inline p-2 bg-slate-600 border-slate-500 border-x border-t rounded-t-lg" on:click={() => {
 			let script = prompt("Script name:");
+			if (scripts[script]) alert("That name is already taken!");
 			if (!script) return;
 			scripts[script] = scriptPlaceholder;
 			selectedScript = script;
@@ -35,8 +36,8 @@
 
 	<!-- Code editor -->
 	{#if selectedScript}
-	<CodeMirror bind:value={scripts[selectedScript]} on:change={update} lang={javascript()} theme={oneDark} useTab={true} lineWrapping={true} tabSize={4} class="grow" styles={{"&": { height: "100%" }}}/>
+		<CodeMirror bind:value={scripts[selectedScript]} on:change={update} lang={javascript()} theme={oneDark} useTab={true} lineWrapping={true} tabSize={4} class="grow" styles={{"&": { height: "100%" }}}/>
 	{:else}
-	<div class="p-2 text-slate-300"> Create a script to get started! </div>
+		<div class="p-2 text-slate-300"> Create a script to get started! </div>
 	{/if}
 </div>
