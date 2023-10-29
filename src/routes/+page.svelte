@@ -1,4 +1,8 @@
 <script>
+	import LightningFS from "@isomorphic-git/lightning-fs";
+	let fs;
+	let loadingComplete = false;
+	
 	let state = "editor";
 	let iframe;
 	let cw, ch;
@@ -7,6 +11,43 @@
 	let sprites = {};
 	let scripts = {};
 	let modules = {};
+
+	async function load() {
+		// Load every sprite from the filesystem into the sprites object
+		for (let sprite of await fs.readdir("/sprites")) {
+			const data = JSON.parse((await fs.readFile(`/sprites/${sprite}`)).toString("utf-8"));
+			sprite = sprite.slice(0, -5);
+			sprites[sprite] = data;
+		}
+		updateSprites();
+
+		// Load every script from the filesystem into the scripts object
+		for (const script of await fs.readdir("/scripts")) {
+			const code = (await fs.readFile(`/scripts/${script}`)).toString("utf-8");
+			scripts[script.slice(0, -3)] = code;
+		}
+		updateScripts();
+	}
+	
+	async function save() {
+		// Delete any files of sprites that no longer exist
+		for (const sprite of await fs.readdir("/sprites")) {
+			if (!sprites[sprite.slice(0, -5)]) await fs.unlink(`/sprites/${sprite}`);
+		}
+		// Write each sprite's data to a file
+		for (const [ id, data ] of Object.entries(sprites)) {
+			fs.writeFile(`/sprites/${id}.json`, JSON.stringify(data));
+		}
+
+		// Delete any files of scripts that no longer exist
+		for (const script of await fs.readdir("/scripts")) {
+			if (!scripts[script.slice(0, -3)]) await fs.unlink(`/scripts/${script}`);
+		}
+		// Write each script's data to a file
+		for (const [ id, code ] of Object.entries(scripts)) {
+			fs.writeFile(`/scripts/${id}.js`, code);
+		}
+	}
 
 	let selected;
 	let inspector;
@@ -18,10 +59,24 @@
     import ListedSprite from "../components/ListedSprite.svelte";
 	
 	import { onMount } from "svelte";
-	onMount(() => {
-		eruda.init();
+	onMount(async () => {
 		updateDomEditor();
+		fs = new LightningFS("project").promises;
+		fs.mkdirIfNotExists = async (path) => {
+			try {
+				await fs.mkdir(path);
+			} catch {}
+		}
+		await fs.mkdirIfNotExists("/sprites");
+		await fs.mkdirIfNotExists("/scripts");
+		await load();
+		loadingComplete = true;
 	});
+
+	function updateSprite(id) {
+		sprites = sprites;
+		iframe.contentWindow.updateSprite && iframe.contentWindow.updateSprite(id, structuredClone(sprites[id]));
+	}
 
 	function updateSprites() {
 		sprites = sprites;
@@ -52,7 +107,6 @@
 			</body>
 		</html>
 		`);
-		setTimeout(updateSprites, 100);
 	}
 
 	function updateDomRun() {
@@ -144,6 +198,7 @@
 		<button on:click={updateDomEditor}> Stop </button>
 	{/if}
 	<span class="space-x-4">
+		<button on:click={save}> Save </button>
 		<span> Projects </span>
 		<span> Account </span>
 	</span>
@@ -156,7 +211,7 @@
 		<!-- Game view and inspector -->
 		<div class="h-[65%] flex flex-row">
 			<!-- Game view -->
-			<iframe bind:this={iframe} class="grow" bind:clientWidth={cw} bind:clientHeight={ch} title="Game view" />
+			<iframe on:load={updateSprites} bind:this={iframe} class="grow" bind:clientWidth={cw} bind:clientHeight={ch} title="Game view" />
 			
 			<!-- Inspector -->
 			<div class="min-w-[30%] p-4 space-y-4 overflow-auto bg-slate-600 text-slate-200">
@@ -184,7 +239,7 @@
 					<button class="block" on:click={() => createSprite("rect")}> + Rectangle </button>
 					<button class="block" on:click={() => createSprite("circle")}> + Circle </button>
 				</div>
-				{#each Object.values(sprites) as sprite}{#if sprite.isTopLevel}
+				{#each Object.values(sprites) as sprite}{#if loadingComplete && sprite.isTopLevel}
 					<ListedSprite sprites={sprites} sprite={sprite} selected={selected ? selected.id : ""}
 						on:select={({ detail: id }) => {
 							selected = sprites[id];
@@ -192,7 +247,7 @@
 							else inspector.updateSprite(selected);
 						}}
 						on:remove={({ detail: id }) => {
-							if (selected.id == id) selected = null;
+							if (selected && selected.id == id) selected = null;
 							delete sprites[id];
 							updateSprites();
 							iframe.contentWindow.updateSprite && iframe.contentWindow.updateSprite(id, null);

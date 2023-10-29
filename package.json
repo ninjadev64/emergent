@@ -20,6 +20,7 @@
 	"dependencies": {
 		"@codemirror/lang-javascript": "^6.2.1",
 		"@codemirror/theme-one-dark": "^6.1.2",
+		"@isomorphic-git/lightning-fs": "^4.6.0",
 		"svelte-codemirror-editor": "^1.1.0",
 		"uuid": "^9.0.1"
 	}
