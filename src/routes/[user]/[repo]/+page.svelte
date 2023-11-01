@@ -1,8 +1,14 @@
 <script>
 	import LightningFS from "@isomorphic-git/lightning-fs";
-	let fs;
-	let loadingComplete = false;
 	
+	export let data;
+	let cfs, fs;
+	let loadingComplete = false;
+
+	function getFS() {
+		return cfs;
+	}
+
 	let state = "editor";
 	let iframe;
 	let cw, ch;
@@ -25,6 +31,7 @@
 		for (const script of await fs.readdir("/scripts")) {
 			const code = (await fs.readFile(`/scripts/${script}`)).toString("utf-8");
 			scripts[script.slice(0, -3)] = code;
+			modules[script.slice(0, -3)] = (await import(/* @vite-ignore */ "data:text/javascript;base64," + btoa(code))).default;
 		}
 		updateScripts();
 	}
@@ -52,16 +59,20 @@
 	let selected;
 	let inspector;
 
-	let saveValue;
+	let gitView;
 
-	import Inspector from "../components/inspector/Inspector.svelte";
-	import ScriptEditor from "../components/ScriptEditor.svelte";
-    import ListedSprite from "../components/ListedSprite.svelte";
+	import Icon from "/src/components/Icon.svelte";
+	import Inspector from "/src/components/inspector/Inspector.svelte";
+	import ScriptEditor from "/src/components/ScriptEditor.svelte";
+    import ListedSprite from "/src/components/ListedSprite.svelte";
+    import GitView from "/src/components/GitView.svelte";
 	
 	import { onMount } from "svelte";
 	onMount(async () => {
 		updateDomEditor();
-		fs = new LightningFS("project").promises;
+		cfs = new LightningFS(`${data.user}/${data.repo}`);
+		fs = cfs.promises;
+		await gitView.init(cfs);
 		fs.mkdirIfNotExists = async (path) => {
 			try {
 				await fs.mkdir(path);
@@ -198,9 +209,9 @@
 		<button on:click={updateDomEditor}> Stop </button>
 	{/if}
 	<span class="space-x-4">
-		<button on:click={save}> Save </button>
-		<span> Projects </span>
-		<span> Account </span>
+		<Icon rel="floppy-disk-back" width="36px" role="button" on:click={save} />
+		<Icon rel="folders" width="36px" role="button" on:click={() => window.location.href = "/projects"} />
+		<Icon rel="sign-out" width="36px" role="button" on:click={() => window.location.href = "/logout"} />
 	</span>
 </div>
 
@@ -257,19 +268,8 @@
 			</div>
 
 			<!-- Import/export -->
-			<div class="p-4 text-slate-200">
-				<button class="block" on:click={() => {
-					let data = JSON.parse(atob(saveValue));
-					sprites = data.sprites;
-					scripts = data.scripts;
-					Object.entries(scripts).forEach(async ([ script, code ]) => {
-						modules[script] = (await import(/* @vite-ignore */ "data:text/javascript;base64," + btoa(code))).default;
-					});
-					updateSprites();
-					updateScripts();
-				}}> Import </button>
-				<button class="block" on:click={() => saveValue = btoa(JSON.stringify({ sprites, scripts }))}> Export </button>
-				<input bind:value={saveValue} class="mt-2 rounded-sm bg-slate-700" />
+			<div class="w-full p-4 text-slate-200">
+				<GitView bind:this={gitView} fs={getFS} user={data.user} repo={data.repo} accessToken={data.access_token} save={save} />
 			</div>
 		</div>
 	</div>
