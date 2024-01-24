@@ -218,7 +218,7 @@
 <!-- Editor -->
 <div class="flex flex-row" style="height: calc(100vh - 48px);">
 	<!-- Left panel -->
-	<div class="w-[65%] h-full flex flex-col bg-slate-300">
+	<div class="flex flex-col grow bg-slate-300">
 		<!-- Game view and inspector -->
 		<div class="h-[65%] flex flex-row">
 			<!-- Game view -->
@@ -243,9 +243,9 @@
 		</div>
 
 		<!-- Assets panel -->
-		<div class="flex flex-row grow bg-slate-500">
+		<div class="flex flex-row h-[35%] bg-slate-500">
 			<!-- Sprite list -->
-			<div class="w-1/3 p-4 bg-slate-600 text-slate-200">
+			<div class="w-1/3 p-4 bg-slate-600 text-slate-200 overflow-auto">
 				<div class="pb-2 mb-4 border-b-2">
 					<button class="block" on:click={() => createSprite("rect")}> + Rectangle </button>
 					<button class="block" on:click={() => createSprite("circle")}> + Circle </button>

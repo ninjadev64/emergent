@@ -24,11 +24,21 @@ export const actions = {
 
 export async function load({ cookies }) {
 	if (!cookies.get("access_token")) throw redirect(302, "/login");
-	const res = await fetch(`https://api.github.com/user/repos`, {
-		headers: {
-			"Authorization": `Bearer ${cookies.get("access_token")}`,
-			"Accept": "application/vnd.github+json"
-		}
-	});
-	return { repos: await res.json() };
+
+	let page = 1;
+	let res = { headers: { get: () => "next" } };
+	let repos = [];
+	
+	while (res.headers.get("link").includes("next") && page < 10) {
+		res = await fetch(`https://api.github.com/user/repos?page=${page}`, {
+			headers: {
+				"Authorization": `Bearer ${cookies.get("access_token")}`,
+				"Accept": "application/vnd.github+json"
+			}
+		});
+		repos = repos.concat(await res.json());
+		page += 1;
+	}
+	
+	return { repos };
 }

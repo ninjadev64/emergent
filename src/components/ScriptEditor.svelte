@@ -15,7 +15,7 @@
 	}
 </script>
 
-<div class="flex flex-col grow overflow-hidden bg-slate-800">
+<div class="flex flex-col w-[35%] h-[100%] overflow-hidden bg-slate-800">
 	<!-- Tabs -->
 	<div class="flex flex-row px-1 pt-1 text-slate-300 border-slate-500 border-b">
 		{#each Object.keys(scripts) as script}
@@ -36,7 +36,7 @@
 
 	<!-- Code editor -->
 	{#if selectedScript}
-		<CodeMirror bind:value={scripts[selectedScript]} on:change={update} lang={javascript()} theme={oneDark} useTab={true} lineWrapping={true} tabSize={4} class="grow" styles={{"&": { height: "100%" }}}/>
+		<CodeMirror bind:value={scripts[selectedScript]} on:change={update} lang={javascript()} theme={oneDark} useTab={true} lineWrapping={true} tabSize={4} class="grow" styles={{ "&": { height: "100%" } }} />
 	{:else}
 		<div class="p-2 text-slate-300"> Create a script to get started! </div>
 	{/if}

@@ -1,7 +1,7 @@
 <script>
     import { onMount } from "svelte";
 
-	import Icon from "../../components/Icon.svelte";
+	import Icon from "../components/Icon.svelte";
 
 	export let data, form;
 
@@ -14,7 +14,7 @@
 	});
 
 	function importProject(r) {
-		let repo = typeof r == "number" ? data.repos[r] : r;
+		let repo = parseInt(r) ? data.repos[r] : r;
 		projects[repo.full_name] = {
 			owner: {
 				avatar_url: repo.owner.avatar_url,
@@ -53,11 +53,13 @@
 
 	<!-- Repository importing -->
 	<div class="flex">
-		<select class="rounded-md" bind:this={select}>
+		<select class="w-full rounded-md" bind:this={select}>
 			<option value="emergent_placeholderoption" disabled selected> Choose a repository... </option>
-			{#each data.repos as repo, i}{#if !projects[repo.full_name]}
-				<option value={i}>{repo.full_name}</option>
-			{/if}{/each}
+			{#each data.repos as repo, i}
+				{#if !projects[repo.full_name]}
+					<option value={i}> {repo.full_name} </option>
+				{/if}
+			{/each}
 		</select>
 		<button class="button ml-2" on:click={() => {
 			importProject(select.value);

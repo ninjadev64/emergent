@@ -3,7 +3,7 @@ import { error, redirect } from "@sveltejs/kit";
 
 export async function load({ cookies }) {
 	if (cookies.get("access_token")) {
-		throw redirect(302, "/projects");
+		throw redirect(302, "/");
 	} else if (cookies.get("refresh_token")) {
 		const res = await fetch(`https://github.com/login/oauth/access_token?client_id=${GITHUB_CLIENT_ID}&client_secret=${GITHUB_CLIENT_SECRET}&grant_type=refresh_token&refresh_token=${cookies.get("refresh_token")}`, {
 			method: "POST",
