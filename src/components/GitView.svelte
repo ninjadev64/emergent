@@ -2,12 +2,12 @@
 	import git from "isomorphic-git";
 	import http from "isomorphic-git/http/web/index.cjs";
 	import { Buffer } from "buffer";
-	
+
 	export let fs;
 
 	export let user, repo;
 	export let accessToken;
-	
+
 	export let save;
 
 	const url = () => `https://x-access-token:${accessToken}@github.com/${user}/${repo}.git`;
@@ -42,7 +42,7 @@
 
 		return userData;
 	}
-	
+
 	export async function init() {
 		globalThis.Buffer = Buffer;
 		try {

@@ -12,7 +12,7 @@ export async function load({ params, cookies }) {
 	switch (res.status) {
 		case 200: break;
 		case 404: throw error(404, "Repository is private or does not exist");
-		default: throw error(res.status, json.message); 
+		default: throw error(res.status, json.message);
 	}
 	return { user: params.user, repo: params.repo, access_token: cookies.get("access_token") };
 }

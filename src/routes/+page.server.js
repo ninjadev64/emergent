@@ -28,7 +28,7 @@ export async function load({ cookies }) {
 	let page = 1;
 	let res = { headers: { get: () => "next" } };
 	let repos = [];
-	
+
 	while (res.headers.get("link").includes("next") && page < 10) {
 		res = await fetch(`https://api.github.com/user/repos?page=${page}`, {
 			headers: {
@@ -39,6 +39,6 @@ export async function load({ cookies }) {
 		repos = repos.concat(await res.json());
 		page += 1;
 	}
-	
+
 	return { repos };
 }

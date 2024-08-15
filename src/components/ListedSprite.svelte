@@ -7,7 +7,7 @@
 	const dispatch = createEventDispatcher();
 </script>
 
-<div class="flex block p-2 cursor-pointer hover:bg-slate-700" class:!bg-slate-800={sprite.id == selected}>
+<div class="p-2 cursor-pointer hover:bg-slate-700" class:!bg-slate-800={sprite.id == selected}>
 	<button class="grow text-left" on:click={() => {dispatch("select", sprite.id)}}> {sprite.name} </button>
 	<button class="float-right" on:click={() => {dispatch("remove", sprite.id)}}> × </button>
 </div>

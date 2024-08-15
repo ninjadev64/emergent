@@ -1,14 +1,14 @@
 <script>
 	import { createEventDispatcher } from "svelte";
 	const dispatch = createEventDispatcher();
-	
+
 	export let filter;
 	let category, mask;
-	
+
 	export function updateObject(f) {
 		filter = f;
 		category.value = Math.log2(filter.category);
-		
+
 		if (filter.mask == -1) {
 			mask.value = "-1";
 		} else {

@@ -46,7 +46,7 @@
 
 		bodyProps.isStatic.disabled = !sprite.isTopLevel;
 		body.updateObject(sprite.body, bodyProps);
-		
+
 		collisionLogic.updateObject(sprite.body.collisionFilter);
 	}
 </script>

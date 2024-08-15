@@ -6,9 +6,9 @@
 		for (const project of Object.keys(projects)) {
 			indexedDB.deleteDatabase(project);
 		}
-		localStorage.removeItem("username", null);
-		localStorage.removeItem("email", null);
-		localStorage.removeItem("projects", null);
+		localStorage.removeItem("username");
+		localStorage.removeItem("email");
+		localStorage.removeItem("projects");
 	}
 </script>
 

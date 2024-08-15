@@ -1,6 +1,6 @@
 <script>
 	import LightningFS from "@isomorphic-git/lightning-fs";
-	
+
 	export let data;
 	let cfs, fs;
 	let loadingComplete = false;
@@ -35,7 +35,7 @@
 		}
 		updateScripts();
 	}
-	
+
 	async function save() {
 		// Delete any files of sprites that no longer exist
 		for (const sprite of await fs.readdir("/sprites")) {
@@ -66,7 +66,7 @@
 	import ScriptEditor from "/src/components/ScriptEditor.svelte";
     import ListedSprite from "/src/components/ListedSprite.svelte";
     import GitView from "/src/components/GitView.svelte";
-	
+
 	import { onMount } from "svelte";
 	onMount(async () => {
 		updateDomEditor();
@@ -210,7 +210,7 @@
 	{/if}
 	<span class="space-x-4">
 		<Icon rel="floppy-disk-back" width="36px" role="button" on:click={save} />
-		<Icon rel="folders" width="36px" role="button" on:click={() => window.location.href = "/projects"} />
+		<Icon rel="folders" width="36px" role="button" on:click={() => window.location.href = "/"} />
 		<Icon rel="sign-out" width="36px" role="button" on:click={() => window.location.href = "/logout"} />
 	</span>
 </div>
@@ -223,7 +223,7 @@
 		<div class="h-[65%] flex flex-row">
 			<!-- Game view -->
 			<iframe on:load={updateSprites} bind:this={iframe} class="grow" bind:clientWidth={cw} bind:clientHeight={ch} title="Game view" />
-			
+
 			<!-- Inspector -->
 			<div class="min-w-[30%] p-4 space-y-4 overflow-auto bg-slate-600 text-slate-200">
 				{#if selected}

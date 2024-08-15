@@ -4,7 +4,7 @@ const physicsEngine = new (class PhysicsEngine {
 	bodies = {};
 	children = [];
 	updateListeners = [];
-	
+
 	constructor() {
 		this.engine = Matter.Engine.create();
 		this.runner = Matter.Runner.create();
@@ -34,7 +34,7 @@ const physicsEngine = new (class PhysicsEngine {
 		switch (type) {
 			case "rect": {
 				this.bodies[id] = Matter.Bodies.rectangle(
-					transform.x, transform.y, transform.width, transform.height, 
+					transform.x, transform.y, transform.width, transform.height,
 					{ ...body, render: render }
 				);
 				break;

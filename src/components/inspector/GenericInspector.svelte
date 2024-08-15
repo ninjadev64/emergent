@@ -6,7 +6,7 @@
 	export let object;
 	export let props;
 	export let selfUpdating = false;
-	
+
 	export function updateObject(o, p) {
 		object = o;
 		props = p ?? props;
